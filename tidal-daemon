@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+"""tidal-daemon launcher: builds .venv on first run, then runs tidal_daemon.cli.
+
+See src/tidal_daemon/cli.py (or `tidal-daemon -h`) for the commands.
+"""
+
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+WINDOWS = os.name == "nt"
+ROOT = Path(__file__).resolve().parent
+_VENV_DIR = ROOT / ".venv"
+_VENV = _VENV_DIR / ("Scripts/python.exe" if WINDOWS else "bin/python3")
+_EXTRA = ["textual>=0.80"]  # the TUI; tidaler brings the rest
+
+
+def _bootstrap() -> None:
+    """Build .venv from the tidaler submodule on first run."""
+    if not (ROOT / "tidaler" / "pyproject.toml").exists():
+        sys.exit("tidaler submodule missing — run: git submodule update --init")
+    print("first run: building .venv from ./tidaler ...", file=sys.stderr)
+    subprocess.check_call([sys.executable, "-m", "venv", str(_VENV_DIR)])
+    subprocess.check_call([str(_VENV), "-m", "pip", "install", "-q", "-e", str(ROOT / "tidaler"), *_EXTRA])
+
+
+# Re-exec inside the bundled venv so it runs as ./tidal-daemon.
+if Path(sys.executable).resolve() != _VENV.resolve():
+    if not _VENV.exists():
+        _bootstrap()
+    argv = [str(_VENV), str(Path(__file__).resolve()), *sys.argv[1:]]
+    if WINDOWS:  # execv on Windows spawns detached; the console loses the child
+        child = subprocess.Popen(argv)
+        while True:
+            try:
+                raise SystemExit(child.wait())
+            except KeyboardInterrupt:
+                pass  # ^C reaches the child too; it shuts itself down
+    os.execv(str(_VENV), argv)
+
+sys.path.insert(0, str(ROOT / "src"))
+from tidal_daemon.cli import main  # noqa: E402
+
+main()

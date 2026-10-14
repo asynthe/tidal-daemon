@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+.cache/
+library.db
+library.db-*
+output/
+sources.toml.imported

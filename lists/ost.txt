@@ -1,0 +1,28 @@
+# Game and visual-novel soundtracks, one "Artist - Title" per line.
+# Credits are best guesses; `check ost` searches the backend and asks when unsure.
+
+# Silent Hill
+Akira Yamaoka - Silent Hill Original Soundtrack
+Akira Yamaoka - Silent Hill 2 Original Soundtracks
+Akira Yamaoka - Silent Hill 3 Original Soundtracks
+Akira Yamaoka - Silent Hill 4: The Room Original Soundtracks
+Akira Yamaoka - Silent Hill Origins Original Soundtrack
+Akira Yamaoka - Silent Hill Homecoming Original Soundtrack
+Akira Yamaoka - Silent Hill: Shattered Memories Original Soundtrack
+Daniel Licht - Silent Hill: Downpour Original Soundtrack
+Akira Yamaoka - Silent Hill: Book of Memories Original Soundtrack
+Akira Yamaoka - Silent Hill 2 Original Soundtrack (2024)
+Akira Yamaoka - Silent Hill f Original Soundtrack
+
+# Metal Gear Solid
+Konami - Metal Gear Solid Original Game Soundtrack
+Harry Gregson-Williams - Metal Gear Solid 2: Sons of Liberty Original Soundtrack
+Harry Gregson-Williams - Metal Gear Solid 3: Snake Eater Original Soundtrack
+Harry Gregson-Williams - Metal Gear Solid 4: Guns of the Patriots Original Soundtrack
+Konami - Metal Gear Solid: Peace Walker Original Soundtrack
+Konami - Metal Gear Solid V Original Soundtrack
+Ludvig Forssell - Metal Gear Solid V: The Phantom Pain Original Soundtrack
+Konami - Metal Gear Solid Delta: Snake Eater Original Soundtrack
+
+# Visual novels
+ZIZZ STUDIO - Saya no Uta Original Soundtrack

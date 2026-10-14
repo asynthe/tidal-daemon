@@ -1,0 +1,3 @@
+[submodule "tidaler"]
+	path = tidaler
+	url = https://github.com/maya-doshi/tidaler
