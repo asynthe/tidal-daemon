@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import re
+import shutil
 import subprocess
 import sys
 import threading
@@ -129,6 +130,26 @@ class _AlbumProgress:
         return getattr(self._p, name)
 
 
+def _tidaler_home() -> Path:
+    """Point tidaler's login and settings (token.json, settings.json) at
+    .tidal-daemon/tidaler instead of ~/.config/tidaler, so they live with
+    the library. A login kept in the old place is copied over, once. Must
+    run before tidaler.config is imported (it reads the path at import)."""
+    from tidaler.helper import path
+
+    from .. import library
+
+    home = library.data_dir() / "tidaler"
+    old = Path(path.path_config_base())
+    if old != home:
+        home.mkdir(parents=True, exist_ok=True)
+        for f in ("token.json", "settings.json"):
+            if (old / f).is_file() and not (home / f).exists():
+                shutil.copy2(old / f, home / f)
+        path.path_config_base = lambda: str(home)
+    return home
+
+
 class TidalerBackend(Backend):
     name = "tidaler"
     label = "tidaler"
@@ -139,6 +160,7 @@ class TidalerBackend(Backend):
         self._tidaler = None
         self._shim = None
         self._downloads: dict[Path, object] = {}
+        self.home = _tidaler_home()
 
     # ------------------------------------------------------------------ session
 
@@ -158,7 +180,8 @@ class TidalerBackend(Backend):
 
     def login(self) -> int:
         exe = Path(sys.executable).with_name("tidaler.exe" if os.name == "nt" else "tidaler")
-        return subprocess.call([str(exe), "login"])
+        # tidaler puts its files in $XDG_CONFIG_HOME/tidaler: here, .tidal-daemon/tidaler
+        return subprocess.call([str(exe), "login"], env={**os.environ, "XDG_CONFIG_HOME": str(self.home.parent)})
 
     # ------------------------------------------------------------------ catalogue
 

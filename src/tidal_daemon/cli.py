@@ -542,7 +542,7 @@ def cmd_rename_files(args):
     notes = [p for p in plans if p.note]
     files = sum(len(p.renames) for p in to_do)
 
-    report = library.RUNTIME / "rename-plan.txt"
+    report = library.data_dir() / "rename-plan.txt"
     report.parent.mkdir(parents=True, exist_ok=True)
     lines = [f"{files} files to rename in {len(to_do)} albums; {len(skipped)} albums left alone", ""]
     for p in to_do:
@@ -590,8 +590,7 @@ def cmd_flatten_artists(args):
     if arts is None or not arts.is_dir():
         sys.exit("no ARTISTS folder")
     rel = arts.relative_to(root).as_posix()
-    lock = "_daemon-" + __import__("hashlib").sha1(str(library.db_path().resolve()).lower().encode()).hexdigest()[:8]
-    if args.apply and not library.lock_label(lock, wait=True):
+    if args.apply and not library.lock_label("_daemon", wait=True):
         sys.exit("stop the daemon first (q in the TUI quits it, or Ctrl+C where `serve` runs), then run this again")
     moves, problems, sources = [], [], []
     taken = {p.name.casefold() for p in arts.iterdir()}
@@ -684,7 +683,7 @@ def cmd_sync_phone(args):
         return
     if delete:
         q = lambda p: "'" + p.replace("'", r"'\''") + "'"  # single-quoted for sh
-        script = library.RUNTIME / "phone-delete.sh"
+        script = library.data_dir() / "phone-delete.sh"
         script.parent.mkdir(parents=True, exist_ok=True)
         script.write_text("".join(f"rm -f {q(dest + '/' + r)}\n" for r in delete), encoding="utf-8", newline="\n")
         run("push", str(script), "/data/local/tmp/tidal-daemon-delete.sh", check=True)

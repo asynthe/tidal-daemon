@@ -85,8 +85,10 @@ def save_prefs(**values) -> None:
 
 
 def start_daemon() -> None:
-    """Start `tidal-daemon serve` in the background, logging to .cache/daemon.log."""
-    log_dir = ROOT / ".cache"
+    """Start `tidal-daemon serve` in the background, logging to daemon.log in .tidal-daemon."""
+    from . import library  # only for where .tidal-daemon is
+
+    log_dir = library.data_dir()
     log_dir.mkdir(exist_ok=True)
     log = open(log_dir / "daemon.log", "a", encoding="utf-8")
     flags = 0

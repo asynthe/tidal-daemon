@@ -35,7 +35,12 @@ tidal-daemon verify <name>        check downloads: every track there, readable, 
 
 `tidal-daemon -h` lists the rest.
 
-Everything lives in one SQLite file, `.tidal-daemon/music.db`, inside the music folder.
+Everything lives in `.tidal-daemon/` inside the music folder: the library
+(`music.db`), the tidaler login (`tidaler/`), lock files and the daemon's log.
+Copy that folder along with the music and the library comes with it. Only two
+small settings files sit outside it, in `~/.config/tidal-daemon/`
+(`%APPDATA%\tidal-daemon\` on Windows): `config.json` (where the music folder
+is) and `tui.json` (the TUI's look).
 
 ## Credits
 

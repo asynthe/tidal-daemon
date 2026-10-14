@@ -15,7 +15,6 @@ never work on the same source at once; the daemon just waits its turn.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import os
 import queue
@@ -478,8 +477,7 @@ class Daemon:
 
     def run(self) -> None:
         # One daemon per library: two would download the same queue twice.
-        lock = "_daemon-" + hashlib.sha1(str(library.db_path().resolve()).lower().encode()).hexdigest()[:8]
-        if not library.lock_label(lock, wait=True):
+        if not library.lock_label("_daemon", wait=True):
             raise SystemExit("a tidal-daemon is already running for this library (`tidal-daemon tui` connects to it)")
         library.say = lambda m: self.log(m, "debug")  # scraper/matcher chatter: stdout only
         try:

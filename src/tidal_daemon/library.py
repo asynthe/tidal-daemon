@@ -2,8 +2,8 @@
 
 The database is .tidal-daemon/music.db inside the music folder (the
 archive), so the library's record lives with the music. Where that folder is comes from a
-small config file in the user's profile (CONFIG_FILE); everything else is
-in the database.
+small config file in the user's profile (CONFIG_FILE); everything else
+(the database, locks, logs, the backend's login) is in .tidal-daemon.
 
 Releases live in the database (see db.py). In memory a release is a flat
 dict ("entry"): its scraped fields plus the decisions made about it. The
@@ -22,9 +22,8 @@ from .backends import BACKENDS, Backend, get_backend
 
 ROOT = Path(__file__).resolve().parents[2]  # the project folder (src/tidal_daemon/ -> .)
 WINDOWS = os.name == "nt"
-RUNTIME = ROOT / ".cache"  # lock files only; all data is in the database
 DB_NAME = "music.db"
-DATA_DIR = ".tidal-daemon"  # inside the music folder: the database, nothing else
+DATA_DIR = ".tidal-daemon"  # inside the music folder: the database, locks, logs, the backend's login
 # Where the database lived before it moved into the music folder; only its
 # music folder setting is read, once, to know where to look.
 OLD_DB = Path(os.environ.get("TIDAL_DAEMON_OLD_DB") or ROOT / "library.db")
@@ -105,6 +104,12 @@ def db_path() -> Path:
     if not path.exists() and old.exists() and not _move_db(old, path):
         return old  # in use (an older daemon still running): keep it there for now
     return path
+
+
+def data_dir() -> Path:
+    """.tidal-daemon in the music folder (next to music.db): everything
+    tidal-daemon keeps besides config.json and tui.json lives here."""
+    return db_path().parent
 
 
 def _move_db(old: Path, new: Path) -> bool:
@@ -431,21 +436,15 @@ def releases_url(src: dict) -> str | None:
 _LOCKS: dict[str, object] = {}
 
 
-def _lock_prefix() -> str:
-    """Locks belong to one library (music.db): two libraries never block each other."""
-    import hashlib
-
-    return hashlib.sha1(str(db_path().resolve()).lower().encode()).hexdigest()[:8]
-
-
 def lock_label(name: str, wait: bool = False) -> bool:
     """One writer per source at a time; long jobs (check, dl) work from a
     copy loaded at start. The OS drops the lock when the process ends, even
     on a crash. Returns False (or exits, for the CLI) when it's taken."""
     if name in _LOCKS:
         return True
-    RUNTIME.mkdir(parents=True, exist_ok=True)
-    f = open(RUNTIME / f"{_lock_prefix()}-{name}.lock", "a+")
+    locks = data_dir() / "locks"  # per library: two libraries never block each other
+    locks.mkdir(parents=True, exist_ok=True)
+    f = open(locks / f"{name}.lock", "a+")
     try:
         if WINDOWS:
             import msvcrt
