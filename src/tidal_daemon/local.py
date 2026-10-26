@@ -263,7 +263,7 @@ def check_album(name: str, group: list[dict], *, ffmpeg: str | None = None, fix:
             for f in broken:
                 f.unlink()  # so the next download fetches it again instead of skipping it
     nf = not_flac(files)
-    if nf:
+    if nf and not library.SOURCES.get(name, {}).get("allow_lossy"):
         problems.append(f"not FLAC: {nf}")
     if extras:
         record["extra_files"] = extras
@@ -339,12 +339,13 @@ def scan_local(name: str, entries: list[dict], interactive: bool | None = None) 
         interactive = sys.stdin.isatty()
     changed = False
     say = library.say
+    allow_lossy = library.SOURCES.get(name, {}).get("allow_lossy")
 
     for folder in library.album_dirs(name):
         files = audio_files(folder)
         if not files:
             continue
-        bad = not_flac(files)
+        bad = "" if allow_lossy else not_flac(files)
         if bad:  # every run, owned or ignored alike, until it's replaced
             say(f"\n[!] NOT FLAC: {folder.name}  ({bad})")
         if folder.name in ignored or folder.name in downloaded:

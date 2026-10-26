@@ -5,3 +5,4 @@ library.db
 library.db-*
 output/
 sources.toml.imported
+previous-system-state/

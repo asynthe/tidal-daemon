@@ -84,7 +84,7 @@ def _print_releases(entries: list[dict]) -> None:
             print(f"  {(e.get('date') or '')[:10]:<10}  {e['artist']} - {e['title']}")
 
 
-def add_source(url: str, name: str | None = None, key_: str | None = None, label: bool = False) -> str:
+def add_source(url: str, name: str | None = None, key_: str | None = None, label: bool = False, mp3_whitelist: bool = False) -> str:
     """Add a source from a link; returns its key. Shared with the daemon."""
     url = url.strip()
     s = library.settings()
@@ -109,6 +109,8 @@ def add_source(url: str, name: str | None = None, key_: str | None = None, label
     if k in library.SOURCES:
         sys.exit(f"{k!r} already exists — pass --key to add it under another name")
     cfg = {"name": name, **({} if label else {"folder": library.settings()["artist_folder"].format(name=safe_folder(name))}), **cfg}
+    if mp3_whitelist:
+        cfg["allow_lossy"] = True
     # A folder of yours the daemon listed as local-only becomes this source;
     # its albums get matched to the new releases (and stay yours).
     folder = cfg.get("folder") or library.settings()["label_folder"].format(name=safe_folder(name))
@@ -125,7 +127,7 @@ def add_source(url: str, name: str | None = None, key_: str | None = None, label
 
 
 def cmd_add(args):
-    k = add_source(args.url, args.name, args.key, args.label)
+    k = add_source(args.url, args.name, args.key, args.label, args.mp3_whitelist)
     library.lock_label(k)
     entries, _ = refresh(k, [])
     save_entries(k, entries)
@@ -150,6 +152,16 @@ def cmd_follow(args):
     get_source(args.name)
     _follow(args.name, not args.off, everything=args.all)
     say(f"{args.name}: {'not followed' if args.off else 'followed — the daemon checks it for new releases and downloads them'}")
+
+
+def cmd_mp3_whitelist(args):
+    """Mark a source as never having a lossless release available, so its
+    albums never get flagged/failed for not being FLAC (check/verify/scan/dl)."""
+    src = get_source(args.name)
+    on = not args.off
+    db.put_source(args.name, {**src, "allow_lossy": on})
+    library.load_sources()
+    say(f"{args.name}: {'MP3/lossy allowed, never flagged' if on else 'back to FLAC-only (will be flagged again)'}")
 
 
 def cmd_scrape(args):
@@ -847,6 +859,7 @@ def main():
     p.add_argument("--key", help="short name for commands (default: from the name)")
     p.add_argument("--label", action="store_true", help="file it as a label, (<name>)/, instead of ARTISTS/<name>/")
     p.add_argument("--follow", action="store_true", help="follow it: future releases get downloaded (tick existing ones in the TUI, or `follow --all`)")
+    p.add_argument("--mp3-whitelist", action="store_true", help="no lossless release exists for this source: never flag/fail its albums for not being FLAC")
     p.set_defaults(fn=cmd_add, locks=False)
 
     p = sub.add_parser("follow", help="watch for new releases (the daemon downloads them)")
@@ -854,6 +867,11 @@ def main():
     p.add_argument("--off", action="store_true", help="stop following")
     p.add_argument("--all", action="store_true", help="also queue every release matched so far")
     p.set_defaults(fn=cmd_follow, locks=False)
+
+    p = sub.add_parser("mp3-whitelist", help="mark a source as never having a lossless release (never flagged for not being FLAC)")
+    p.add_argument("name")
+    p.add_argument("--off", action="store_true", help="back to FLAC-only (flagged again)")
+    p.set_defaults(fn=cmd_mp3_whitelist, locks=False)
 
     p = sub.add_parser("scrape", help="refresh the release list")
     p.add_argument("name")
